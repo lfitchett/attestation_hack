@@ -62,11 +62,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // println!("AAD Token: {}", token.access_token);
 
     // ========================== Attest Token ================================================
-    let quote_hex = "";
-    let enclave_held_data_hex = "";
+    let quote_hex = b"";
+    let enclave_held_data_hex = b"";
 
-    let quote_base64 = quote_hex;
-    let enclave_held_data_base64 = enclave_held_data_hex;
+    let quote_base64 = base64::encode_config(quote_hex, base64::URL_SAFE);
+    let enclave_held_data_base64 = base64::encode_config(enclave_held_data_hex, base64::URL_SAFE);
 
     let body = json! {
         {
