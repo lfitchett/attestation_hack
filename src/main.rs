@@ -1,4 +1,3 @@
-use futures::TryStreamExt;
 use guid_create::GUID;
 use jsonwebtoken::*;
 use serde_json::json;
@@ -8,7 +7,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tenant = "72f988bf-86f1-41af-91ab-2d7cd011db47";
     let client_id = "1acd55d3-138b-4538-8521-63215c58e9df";
 
-    let login_url = format!("https://login.microsoftonline.com/{}/oauth2/v2.0/token", tenant);
+    let login_url = format!(
+        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+        tenant
+    );
+
     // ========================== Make Cert JWT ================================================
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
@@ -52,25 +55,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("client_assertion", &cert_token),
     ];
 
-    // let body = &[
-    //     ("client_id", client_id),
-    //     ("client_secret", "ngB0~Cu~FUH4um1R_HhA-gfXA638IAULS8"),
-    //     ("scope", "https://management.azure.com/.default"),
-    //     ("grant_type", "client_credentials"),
-    // ];
-
     let get_token = client.post(&login_url).form(body).send().await?;
-
     // println!("AAD Token: {:#?}", get_token.text().await);
 
     let token: TokenResponse = get_token.json().await?;
-    println!("AAD Token: {}", token.access_token);
+    // println!("AAD Token: {}", token.access_token);
 
     // ========================== Attest Token ================================================
     let quote_hex = "";
     let enclave_held_data_hex = "";
 
+    let quote_base64 = quote_hex;
+    let enclave_held_data_base64 = enclave_held_data_hex;
 
+    let body = json! {
+        {
+            "RuntimeData " : {
+                "Data": enclave_held_data_base64,
+                "DataType": "Binary"
+            },
+            "Report": quote_base64,
+        }
+    };
+
+    let enclave_request = client.post("https://hackprovider.wus.attest.azure.net:443/attest/OpenEnclave?api-version=2020-10-01")
+        .header("Authorization", format!("Bearer {}", token.access_token))
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_string(&body)?)
+        .send().await?;
+
+    println!("Enclave Request: {:#?}", enclave_request);
+    // println!("Enclave Request: {:#?}", enclave_request.text().await);
 
     Ok(())
 }
