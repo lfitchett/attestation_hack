@@ -5,10 +5,10 @@ use serde_json::json;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let tenant = "c92dd71d-c78b-49e0-8c86-1f6b5301a825";
-    let client_id = "7b69073c-ca57-403d-b649-dc1ee28bdb16";
+    let tenant = "72f988bf-86f1-41af-91ab-2d7cd011db47";
+    let client_id = "1acd55d3-138b-4538-8521-63215c58e9df";
 
-    let login_url = format!("https://login.windows-ppe.net/{}/oauth2/v2.0/token", tenant);
+    let login_url = format!("https://login.microsoftonline.com/{}/oauth2/v2.0/token", tenant);
     // ========================== Make Cert JWT ================================================
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
@@ -29,16 +29,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cert_token = encode(
         &header,
         &my_claims,
-        &EncodingKey::from_rsa_pem(include_bytes!(r#"C:\Users\Lee\Downloads\device-id.key.pem"#))?,
+        &EncodingKey::from_rsa_pem(include_bytes!(
+            r#"C:\Users\Lee\Downloads\device-id.key.pem"#
+        ))?,
     )?;
     // println!("Cert JWT: {}", cert_token);
 
     // ========================== Get token ================================================
     let client = reqwest::Client::new();
 
+    let scope = "https://management.azure.com/.default";
+    // let scope = "https://hackprovider.wus.attest.azure.net";
+
     let body = &[
         ("client_id", client_id),
-        ("scope", "https://management.azure.com/.default"),
+        ("scope", scope),
         ("grant_type", "client_credentials"),
         (
             "client_assertion_type",
@@ -60,6 +65,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let token: TokenResponse = get_token.json().await?;
     println!("AAD Token: {}", token.access_token);
+
+    // ========================== Attest Token ================================================
+    let quote_hex = "";
+    let enclave_held_data_hex = "";
+
+
 
     Ok(())
 }
