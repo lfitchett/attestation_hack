@@ -16,6 +16,10 @@ build:
 	$(CC) -g -c $(CFLAGS) $(CINCLUDES) remoteattestation_u.c
 	$(CXX) -g -c $(CXXFLAGS) $(INCLUDES) host.cpp quotefile.cpp
 	$(CXX) -o genquote_host host.o quotefile.o remoteattestation_u.o $(LDFLAGS)
+	$(CXX) -o genquote_host host.o quotefile.o remoteattestation_u.o $(LDFLAGS)
+	ar rcs genquote_host.a host.o quotefile.o remoteattestation_u.o 
+
+libs: libmylib.a
 
 clean:
 	rm -f genquote_host *.o remoteattestation_u.*  remoteattestation_args.h

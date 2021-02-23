@@ -143,3 +143,80 @@ exit:
     myprintf("Host:  %s \n", (ret == 0) ? "succeeded" : "failed");
     return ret;
 }
+
+void genquote()
+{
+    oe_enclave_t* enclave = NULL;
+    oe_result_t result = OE_OK;
+    int ret = 1;
+    uint8_t* pem_key = NULL;
+    size_t pem_key_size = 0;
+    uint8_t* remote_report = NULL;
+    size_t remote_report_size = 0;
+    oe_report_t parsed_report = {0};
+
+    enclave = create_enclave("genquote_enclave.debug.signed");
+    if (enclave == NULL)
+    {
+        goto exit;
+    }
+
+    myprintf("Host: Requesting a remote report and the encryption key from the enclave\n");
+    result = get_remote_report_with_pubkey(
+        enclave,
+        &ret,
+        &pem_key,
+        &pem_key_size,
+        &remote_report,
+        &remote_report_size);
+    if ((result != OE_OK) || (ret != 0))
+    {
+        myprintf(
+            "Host: get_remote_report_with_pubkey failed. %s\n",
+            oe_result_str(result));
+        if (ret == 0)
+            ret = 1;
+        goto exit;
+    }
+
+    myprintf("Host: The enclave's public key: \n%s\n", pem_key);
+
+    myprintf("Host: Parsing the generated report and writing to a local file\n");
+    result = oe_parse_report(remote_report, remote_report_size, &parsed_report);
+    if (result != OE_OK)
+    {
+        myprintf(
+            "Host: oe_parse_report failed. %s\n",
+            oe_result_str(result));
+        if (ret == 0)
+            ret = 1;
+        goto exit;
+    }
+    else
+    {
+        QuoteFile  myQuoteFile (parsed_report, remote_report, remote_report_size, pem_key, pem_key_size);
+
+        printf("    JSON file created");
+        myQuoteFile.WriteToJsonFile("./quotes", "enclave.info.debug.json");
+        if (EnableVerbosePrintf) 
+        {
+            myQuoteFile.WriteToJsonFile(stdout);
+        }
+    }
+
+    ret = 0;
+
+exit:
+    if (pem_key)
+        free(pem_key);
+
+    if (remote_report)
+        free(remote_report);
+
+    myprintf("Host: Terminating enclave\n");
+    if (enclave)
+        terminate_enclave(enclave);
+
+    myprintf("Host:  %s \n", (ret == 0) ? "succeeded" : "failed");
+    // return ret;
+}
