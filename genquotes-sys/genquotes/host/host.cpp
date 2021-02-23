@@ -144,7 +144,10 @@ exit:
     return ret;
 }
 
-void genquote()
+int genquote(
+    unsigned char** quote, size_t* quote_size,
+    unsigned char** ehd, size_t* ehd_size
+)
 {
     oe_enclave_t* enclave = NULL;
     oe_result_t result = OE_OK;
@@ -202,6 +205,12 @@ void genquote()
         {
             myQuoteFile.WriteToJsonFile(stdout);
         }
+
+        //TODO: Invoke new myquotefile API to WriteToCharBuffer
+        // if ((*quote = (unsigned char*)malloc(data_length)) == NULL)
+        // {
+        //     ret = __FAILURE__;
+        // }
     }
 
     ret = 0;
@@ -218,5 +227,6 @@ exit:
         terminate_enclave(enclave);
 
     myprintf("Host:  %s \n", (ret == 0) ? "succeeded" : "failed");
-    // return ret;
+
+    return ret;
 }
